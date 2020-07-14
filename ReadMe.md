@@ -66,7 +66,7 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 1. Grab necessary credentials from config file
 
     a.
-    ```python
+```python
     config = configparser.ConfigParser()
     config.read_file(open('dwh.cfg'))
 
@@ -88,7 +88,7 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 2. Boto 3 client set up
 
     a.
-    ```python
+```python
     ec2 = boto3.resource('ec2',
       region_name="us-west-2",
       aws_access_key_id=KEY,
@@ -114,9 +114,7 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 3. IAM Role
 
     a.
-
-    ```python
-
+```python
     from botocore.exceptions import ClientError
 
     try:
@@ -134,10 +132,11 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
     except Exception as e:
         print(e)    
 ```
+
 4. Attach a policy to the role
 
     a.   
-    ```python
+```python
 
     print("1.2 Attaching Policy")
 
@@ -146,12 +145,13 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
                       )['ResponseMetadata']['HTTPStatusCode']
 
 
-'''
+```
+
 5. Create the Redshift Cluster
 
-    a.
+a.
 
-    ```python
+```python
 
     try:
       response = redshift.create_cluster(
@@ -169,11 +169,10 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
         )
         except Exception as e:
           print(e)
+```
+b. Check cluster
 
-    ```
-
-    b. Check cluster
-    ```python
+```python
     def prettyRedshiftProps(props):
       pd.set_option('display.max_colwidth', -1)
       keysToShow = ["ClusterIdentifier", "NodeType", "ClusterStatus", "MasterUsername", "DBName", "Endpoint", "NumberOfNodes", 'VpcId']
@@ -183,7 +182,7 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
       myClusterProps = redshift.describe_clusters(ClusterIdentifier=DWH_CLUSTER_IDENTIFIER)['Clusters'][0]
       prettyRedshiftProps(myClusterProps)
 
-    ```
+```
 
 
 
@@ -191,20 +190,20 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 
 6. Print dwh endpoint and role ANR
 
-    a.
-    ```python
+a.
+```python
     DWH_ENDPOINT = myClusterProps['Endpoint']['Address']
     DWH_ROLE_ARN = myClusterProps['IamRoles'][0]['IamRoleArn']
     print("DWH_ENDPOINT :: ", DWH_ENDPOINT)#place as HOST in dwh.cfg
     print("DWH_ROLE_ARN :: ", DWH_ROLE_ARN)#place as ARN dwh.cfg
+```
 
-    ```
+b. Place both in the config file for later user  
 
-    b. Place in the config file for later user  
 7. Give access to TCP port to access the cluster and endpoint
 
     a.
-    ```python
+```python
     try:
     vpc = ec2.Vpc(id=myClusterProps['VpcId'])
     defaultSg = list(vpc.security_groups.all())[0]
@@ -219,23 +218,23 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 except Exception as e:
     print(e)
 
-    ```  
+```  
 
 
 8. Check connection.
 
     a.
-    ```python
+```python
     %load_ext sql
     conn_string="postgresql://{}:{}@{}:{}/{}".format(DWH_DB_USER, DWH_DB_PASSWORD, DWH_ENDPOINT, DWH_PORT,DWH_DB)
     print(conn_string)
     %sql $conn_string
+```  
 
-    ```  
 9. Test Query
 
     a.
-    ```python
+```python
     %%sql
     SELECT
     users.first_name,
@@ -245,12 +244,12 @@ except Exception as e:
     LEFT JOIN songs on songplays.song_id = songs.song_id
     WHERE songs.title = 'All Hands Against His Own';
 
-    ```  
+```  
 
 10. Delete Cluster and roles
 
     a.
-    ```python
+```python
     '''
     STEP 5: Clean up your resources
     '''
@@ -267,7 +266,7 @@ except Exception as e:
     iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess")
     iam.delete_role(RoleName=DWH_IAM_ROLE_NAME)
 
-    ```  
+```  
 
 **Additional instructions:  **If you are running this file from the command line, please comment out everything after prettyRedshiftProps(myClusterProps) (see 5.a).  Wait about 10 minutes and then comment out steps 3 -5 (you can still run 5a )  and 7-10.  Steps 9 and 10 should not run until we extract have run our scripts to create our tables and clean our data. Steps 8 and 9 can be modified to use pythons [psycopg2](https://pypi.org/project/psycopg2/)  library to work from the command line instead of using the [Jupyter Magic Method](https://towardsdatascience.com/jupyter-magics-with-sql-921370099589https://towardsdatascience.com/jupyter-magics-with-sql-921370099589).   
 
@@ -498,13 +497,12 @@ WHERE page = 'NextSong';
 ```
 
 Our very last step is to store our queries in list to be used in subsequent scripts.  For the insert_table_queries, it is important to make sure the songplay  table insert is ran after the song and artist table are created since both tables are used to create it.
-```python
 
+```python
 create_table_queries = [staging_events_table_create, staging_songs_table_create, songplay_table_create, user_table_create, song_table_create, artist_table_create, time_table_create]
 drop_table_queries = [staging_events_table_drop, staging_songs_table_drop, songplay_table_drop, user_table_drop, song_table_drop, artist_table_drop, time_table_drop]
 copy_table_queries = [staging_events_copy, staging_songs_copy]
 insert_table_queries = [time_table_insert, user_table_insert, song_table_insert, artist_table_insert, time_table_insert, songplay_table_insert]
-
 ```
 
 ### Create Tables
@@ -545,13 +543,15 @@ Now that our tables have been created, we can insert data into them.  We begin a
 
 
 
-*   ```python
+*   
+```python
 for query in copy_table_queries:
         print(query)
         cur.execute(query)
         conn.commit()
 ```
-*  ```python
+*  
+```python
 for query in insert_table_queries:
         print(query)
         cur.execute(query)
@@ -570,3 +570,5 @@ The final thing to do is to perform a query to be sure our data is ready for our
 
 <!-- Footnotes themselves at the bottom. -->
 ## Notes
+
+ <sup>1</sup> "Infrastructure as code - Wikipedia." https://en.wikipedia.org/wiki/Infrastructure_as_code.
