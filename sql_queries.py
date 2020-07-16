@@ -78,7 +78,7 @@ user_agent  TEXT
 user_table_create = ("""
 CREATE TABLE IF NOT EXISTS users
 (
-user_id    INTEGER IDENTITY(0,1) PRIMARY KEY,
+user_id    INTEGER PRIMARY KEY,
 first_name TEXT,
 last_name  TEXT,
 gender     TEXT,
@@ -121,7 +121,7 @@ weekday    INTEGER NOT NULL
 );
 """)
 
-# copy daty from s3 to staging tables 
+# copy daty from s3 to staging tables
 staging_events_copy = ("""
 COPY staging_events
 FROM {}
@@ -148,8 +148,9 @@ TRUNCATECOLUMNS BLANKSASNULL EMPTYASNULL;
 
 
 user_table_insert = ("""
-INSERT INTO users (first_name, last_name, gender, level)
+INSERT INTO users (user_id,first_name, last_name, gender, level)
 SELECT  DISTINCT
+        userId    AS user_id,
         firstName AS first_name,
         lastName  AS last_name,
         gender    AS gender,

@@ -6,9 +6,11 @@
 
 ### Introduction
 
-The goal of this project is to store data for a fictitious music company call Sparkify.  Currently, Sparkify’s data is stored in an Amazon S3 bucket as JSON data.  We are to move the data from an S3 bucket to an Amazon Redshift cluster in staging tables.  Once the data is stored in Redshift, we can then move the data to fact and dimension tables.  This will enable their analytics team to be able to gain insight from the data.
+The goal of this project is to store data for a fictitious music company call Sparkify.  Currently, Sparkify’s data is stored in an Amazon S3 bucket as JSON data.  We are to move the data from an S3 bucket to an Amazon Redshift cluster in staging tables.  Once the data is stored in Redshift, we can then move the data to fact and dimension tables.  This will enable their analytics team to gain insight from the data.
 
-**Please Note: **The environment used for this project was [Atom](https://atom.io/) text editor with the  [Hydrogen](https://atom.io/packages/hydrogen) package enabled.  This allows you to run code line by line in a similar way to a Jupyter Notebook. The only sheet that will not be able to run completely from the command line is the  “_Infrastructure-as-Code.py_” file. If you are unable to run line by line, please see additional instructions in the Infrastructure As Code section.
+**Please Note:** The environment used for this project was [Atom](https://atom.io/) text editor with the  [Hydrogen](https://atom.io/packages/hydrogen) package enabled.  This allows you to run code line by line in a similar way to a Jupyter Notebook. The only sheet that will not be able to run completely from the command line is the  “_Infrastructure-as-Code.py_” file. If you are unable to run line by line, please see additional instructions in the Infrastructure As Code section.  Below is an [Entity Relationship Diagram](https://en.wikipedia.org/wiki/Entity%E2%80%93relationship_model) (ERD) for what our final tables should look like:
+
+![ERD](Image/ERD.png "ERD")
 
 
 ### DWH config file
@@ -57,9 +59,11 @@ SONG_DATA='s3://udacity-dend/song_data'
 To begin, first create an [IAM user](https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html).  Once you have created a user place your key and secrete in the IAM section.
 
 
+
+
 ### Infrastructure as code
 
-Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through machine-readable definition files, rather than physical hardware configuration or interactive configuration tools[^1].  The advantage of infrastructure as code is that other developers can see exactly how you set up your environment.  For this project, we are going to use Pythons  [Boto3](https://pypi.org/project/boto3/)  library to set up:
+Infrastructure as code (IaC) is the process of managing and provisioning computer data centers through machine-readable definition files, rather than physical hardware configuration or interactive configuration tools[<sup>1</sup>].  The advantage of infrastructure as code is that other developers can see exactly how you set up your environment.  For this project, we are going to use Pythons  [Boto3](https://pypi.org/project/boto3/)  library.  We will use this library to create our cluster and attach a role to it so that it can access the S3 bucket.  Please see explanation of code below:
 
 
 
@@ -143,8 +147,6 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
     iam.attach_role_policy(RoleName=DWH_IAM_ROLE_NAME,
                        PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
                       )['ResponseMetadata']['HTTPStatusCode']
-
-
 ```
 
 5. Create the Redshift Cluster
@@ -152,7 +154,6 @@ Infrastructure as code (IaC) is the process of managing and provisioning compute
 a.
 
 ```python
-
     try:
       response = redshift.create_cluster(
 
@@ -170,7 +171,7 @@ a.
         except Exception as e:
           print(e)
 ```
-b. Check cluster
+b. **Check cluster** Do Not continue until the cluster status reads **available** keep running describe_clusters and prettyRedshiftProps to check status.
 
 ```python
     def prettyRedshiftProps(props):
@@ -217,7 +218,6 @@ b. Place both in the config file for later user
     )
 except Exception as e:
     print(e)
-
 ```  
 
 
@@ -243,7 +243,6 @@ except Exception as e:
     LEFT JOIN songplays on songplays.song_id = users.song_id
     LEFT JOIN songs on songplays.song_id = songs.song_id
     WHERE songs.title = 'All Hands Against His Own';
-
 ```  
 
 10. Delete Cluster and roles
@@ -265,10 +264,9 @@ except Exception as e:
     '''
     iam.detach_role_policy(RoleName=DWH_IAM_ROLE_NAME, PolicyArn="arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess")
     iam.delete_role(RoleName=DWH_IAM_ROLE_NAME)
-
 ```  
 
-**Additional instructions:  **If you are running this file from the command line, please comment out everything after prettyRedshiftProps(myClusterProps) (see 5.a).  Wait about 10 minutes and then comment out steps 3 -5 (you can still run 5a )  and 7-10.  Steps 9 and 10 should not run until we extract have run our scripts to create our tables and clean our data. Steps 8 and 9 can be modified to use pythons [psycopg2](https://pypi.org/project/psycopg2/)  library to work from the command line instead of using the [Jupyter Magic Method](https://towardsdatascience.com/jupyter-magics-with-sql-921370099589https://towardsdatascience.com/jupyter-magics-with-sql-921370099589).   
+**Additional instructions:** If you are running this file from the command line, please comment out everything after prettyRedshiftProps(myClusterProps) (see 5.a).  Wait about 10 minutes and then comment out steps 3 -5 (you can still run 5a )  and 7-10.  Steps 9 and 10 should not run until we extract have run our scripts to create our tables and clean our data. Steps 8 and 9 can be modified to use pythons [psycopg2](https://pypi.org/project/psycopg2/)  library to work from the command line instead of using the SQL [Jupyter Magic Methods](https://towardsdatascience.com/jupyter-magics-with-sql-921370099589https://towardsdatascience.com/jupyter-magics-with-sql-921370099589).   
 
 
 ### SQL Queries
@@ -563,7 +561,21 @@ for query in insert_table_queries:
 
 The final thing to do is to perform a query to be sure our data is ready for our analytics team.  We will again return to our Infrastructure as code file and run this query to check our data.  Since this is just a proof of concept.  We don’t want to continue to be charged by Amazon.  So we will conclude by deleting the redshift cluster and IAM Role to avoid ongoing charges.
 
+```python
+%%sql
+SELECT
+users.first_name AS FirstName,
+users.last_name AS LastName,
+songs.title AS Title
+from users
+LEFT JOIN songplays on songplays.user_id = users.user_id
+LEFT JOIN songs on songplays.song_id = songs.song_id
+GROUP BY 1,2,3
+Having Title ='Nothin\' On You [feat. Bruno Mars] (Album Version)';
+```
+Result:
 
+![Results](Image/Results.png "Results")
 
 
 

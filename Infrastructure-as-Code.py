@@ -162,13 +162,15 @@ print(conn_string)
 queries to check
 '''
 %%sql
-SELECT 
-users.first_name,
-users.last_name
+SELECT
+users.first_name AS FirstName,
+users.last_name AS LastName,
+songs.title AS Title
 from users
-LEFT JOIN songplays on songplays.song_id = users.song_id
+LEFT JOIN songplays on songplays.user_id = users.user_id
 LEFT JOIN songs on songplays.song_id = songs.song_id
-WHERE songs.title = 'All Hands Against His Own';
+GROUP BY 1,2,3
+Having Title ='Nothin\' On You [feat. Bruno Mars] (Album Version)';
 
 
 
